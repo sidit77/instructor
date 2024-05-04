@@ -1,0 +1,7 @@
+[package]
+name = "instructor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+instructor-derive = { path = "../instructor-derive" }

@@ -1,0 +1,12 @@
+[package]
+name = "instructor-derive-internals"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+proc-macro2 = { workspace = true }
+syn = { workspace = true, features = ["default"] }
+quote = "1.0.9"
+
+[dev-dependencies]
+prettyplease = "0.2.19"

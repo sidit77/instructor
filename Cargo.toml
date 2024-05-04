@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = [
+    "instructor",
+    "instructor-derive",
+    "instructor-derive-internals"
+]
+
+[workspace.dependencies]
+proc-macro2 = { version = "1.0.81", default-features = false }
+syn = { version = "2.0.60", default-features = false }
+
