@@ -3,5 +3,8 @@ name = "instructor"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+derive = ["instructor-derive"]
+
 [dependencies]
-instructor-derive = { path = "../instructor-derive" }
+instructor-derive = { path = "../instructor-derive", optional = true }

@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields, Result};
 
-pub fn derive_deserialize(input: DeriveInput) -> Result<TokenStream> {
+pub fn derive_unpack(input: DeriveInput) -> Result<TokenStream> {
     let DeriveInput { ident, data, ..} = input;
 
     let tokens = match data {
@@ -16,7 +16,7 @@ pub fn derive_deserialize(input: DeriveInput) -> Result<TokenStream> {
                     .unwrap_or_else(|| format_ident!("field_{}", fields.len()));
                 let ty = &field.ty;
                 statements.push(quote! {
-                    let #ident: #ty = instructor::Deserialize::<E>::deserialize(buffer)?;
+                    let #ident: #ty = instructor::Unpack::<E>::unpack(buffer)?;
                 });
                 fields.push(ident);
             }
@@ -34,8 +34,8 @@ pub fn derive_deserialize(input: DeriveInput) -> Result<TokenStream> {
                 }
             };
             quote! {
-                impl<E: instructor::Endian> instructor::Deserialize<E> for #ident {
-                    fn deserialize<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> Result<Self, instructor::Error> {
+                impl<E: instructor::Endian> instructor::Unpack<E> for #ident {
+                    fn unpack<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> Result<Self, instructor::Error> {
                         #(#statements)*
                         Ok(#ret)
                     }
@@ -65,7 +65,7 @@ mod tests {
         //        sdf: u32,
         //    }
         //};
-        let output = derive_deserialize(input).unwrap();
+        let output = derive_unpack(input).unwrap();
         let formatted = prettyplease::unparse(&syn::parse2(output).unwrap());
         print!("{}", formatted);
     }
