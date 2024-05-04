@@ -1,16 +1,19 @@
-use instructor::{BigEndian, Buffer, LittleEndian, Unpack};
+use instructor::{Buffer, Unpack};
+use instructor::utils::Length;
 
 fn main() {
-    let mut data: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x0f];
-    println!("{:#?}", data.read::<Header2, _>().unwrap())
+    let mut data: &[u8] = &[0x06, 0x00, 0x01, 0x00, 0x0a, 0x02, 0x02, 0x00, 0x02, 0x00];
+    let l2cap: L2capHeader = data.read().unwrap();
+    println!("{:?}", l2cap);
 }
 
-#[derive(Debug, Unpack)]
-struct Header {
-    length: u32,
-    re: u8
-}
 
 #[derive(Debug, Unpack)]
 #[instructor(endian = "little")]
-struct Header2(u16, u16);
+struct L2capHeader {
+    len: Length<u16, 2>,
+    cid: u16
+}
+
+
+

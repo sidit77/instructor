@@ -2,6 +2,7 @@ mod endian;
 mod unpack;
 mod error;
 mod buffer;
+pub mod utils;
 
 pub use endian::{Endian, LittleEndian, BigEndian, NativeEndian, NetworkEndian};
 pub use unpack::Unpack;
