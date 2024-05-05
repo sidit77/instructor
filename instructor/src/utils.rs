@@ -18,7 +18,7 @@ impl<E: Endian, T, const OFFSET: isize> Unpack<E> for Length<T, OFFSET>
                 .map_err(|_| Error::InvalidValue)?
                 .saturating_add_signed(OFFSET))
             .then_some(Self(len))
-            .ok_or(Error::TooShort)
+            .ok_or(Error::UnexpectedLength)
     }
 }
 
