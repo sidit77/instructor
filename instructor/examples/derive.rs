@@ -1,3 +1,4 @@
+use bytes::{Buf, Bytes};
 use instructor::{Buffer, Unpack};
 use instructor::utils::Length;
 
@@ -10,6 +11,8 @@ fn main() {
     let signaling: SignalingHeader = data.read().unwrap();
     println!("{:?}", signaling);
     println!("{:X?}", data);
+
+    let b = Bytes::copy_from_slice(data);
 }
 
 #[derive(Debug, Unpack)]

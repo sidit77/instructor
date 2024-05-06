@@ -10,7 +10,7 @@ pub trait Unpack<E: Endian>
 impl<E: Endian, const N: usize> Unpack<E> for [u8; N] {
     fn unpack<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
         let mut array = [0; N];
-        array.copy_from_slice(buffer.get(N)?);
+        buffer.copy_to_slice(&mut array)?;
         Ok(array)
     }
 }

@@ -1,7 +1,7 @@
 use crate::{Endian, Error, Unpack};
 
 pub trait Buffer {
-    fn get(&mut self, size: usize) -> Result<&[u8], Error>;
+    fn copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
 
     fn remaining(&self) -> Option<usize>;
 
@@ -15,13 +15,14 @@ pub trait Buffer {
 }
 
 impl Buffer for &[u8] {
-    fn get(&mut self, size: usize) -> Result<&[u8], Error> {
-        if self.len() < size {
+    fn copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error> {
+        if self.len() < buf.len() {
             return Err(Error::TooShort);
         }
-        let (data, rest) = self.split_at(size);
+        let (data, rest) = self.split_at(buf.len());
         *self = rest;
-        Ok(data)
+        buf.copy_from_slice(data);
+        Ok(())
     }
 
     fn remaining(&self) -> Option<usize> {

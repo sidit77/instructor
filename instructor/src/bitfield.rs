@@ -50,12 +50,14 @@ impl<I: BitStorage> BitBuffer<I> {
 }
 
 impl<I: BitStorage> Buffer for BitBuffer<I> {
-    fn get(&mut self, size: usize) -> Result<&[u8], Error> {
-        let start = self.buffer.as_ref().len() - size;
-        self.buffer
-            .as_ref()
-            .get(start..)
-            .ok_or(Error::TooShort)
+    fn copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error> {
+        let own = self.buffer.as_ref();
+        if own.len() < buf.len() {
+            return Err(Error::TooShort);
+        }
+        let start = own.len() - buf.len();
+        buf.copy_from_slice(&own[start..]);
+        Ok(())
     }
 
     fn remaining(&self) -> Option<usize> {
