@@ -1,5 +1,5 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use instructor::{Buffer, BufferMut, Endian, LittleEndian, Pack, Unpack};
+use instructor::{Buffer, BufferMut, Endian, LittleEndian, Pack, Unpack, DoubleEndedBufferMut};
 use instructor::utils::Length;
 
 fn main() {
@@ -20,9 +20,15 @@ fn main() {
         id: 2,
         length: Length::with_offset(2).unwrap(),
     });
-    test.put(data);
+    test.put(data.clone());
     println!("{:02x?}", test.chunk());
     assert_eq!(test.chunk(), &btpacket[4..]);
+
+    let mut test2 = BytesMut::new();
+    test2.put(data);
+    test2.write_front(&signaling);
+    test2.write_front(&l2cap);
+    assert_eq!(test.chunk(), test2.chunk());
 }
 
 #[derive(Debug, Unpack)]

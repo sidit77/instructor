@@ -1,3 +1,4 @@
+use std::ops::DerefMut;
 use bytes::{Buf, BufMut};
 use crate::{Endian, Error, Pack, Unpack};
 
@@ -60,5 +61,25 @@ pub trait BufferMut {
 impl<T: BufMut> BufferMut for T {
     fn extend_from_slice(&mut self, buf: &[u8]) {
         self.put_slice(buf);
+    }
+}
+
+pub trait DoubleEndedBufferMut: BufferMut {
+    fn write_front<T, E>(&mut self, value: &T)
+        where
+            T: Pack<E>,
+            E: Endian;
+}
+
+impl<T: BufferMut + DerefMut<Target = [u8]>> DoubleEndedBufferMut for T {
+    fn write_front<U, E>(&mut self, value: &U)
+        where
+            U: Pack<E>,
+            E: Endian,
+    {
+        let len = self.len();
+        self.write(value);
+        let diff = self.len() - len;
+        self.rotate_right(diff);
     }
 }
