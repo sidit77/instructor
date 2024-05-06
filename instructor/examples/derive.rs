@@ -1,9 +1,10 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use instructor::{Buffer, BufferMut, LittleEndian, Unpack};
+use instructor::{Buffer, BufferMut, Endian, LittleEndian, Pack, Unpack};
 use instructor::utils::Length;
 
 fn main() {
-    let mut data = Bytes::from_static(&[0x00, 0x28, 0x0a, 0x00, 0x06, 0x00, 0x01, 0x00, 0x0a, 0x02, 0x02, 0x00, 0x02, 0x00]);
+    let btpacket = &[0x00, 0x28, 0x0a, 0x00, 0x06, 0x00, 0x01, 0x00, 0x0a, 0x02, 0x02, 0x00, 0x02, 0x00];
+    let mut data = Bytes::from_static(btpacket);
     let acl: AclHeader = data.read().unwrap();
     println!("{:?}", acl);
     let l2cap: L2capHeader = data.read().unwrap();
@@ -13,8 +14,15 @@ fn main() {
     println!("{:?}", data);
 
     let mut test = BytesMut::new();
-    test.write::<u16, LittleEndian>(12);
-    println!("{:?}", test.chunk());
+    test.write(&l2cap);
+    test.write(&SignalingHeader {
+        code: SignalingCodes::InformationRequest,
+        id: 2,
+        length: Length::with_offset(2).unwrap(),
+    });
+    test.put(data);
+    println!("{:02x?}", test.chunk());
+    assert_eq!(test.chunk(), &btpacket[4..]);
 }
 
 #[derive(Debug, Unpack)]
@@ -30,14 +38,14 @@ struct AclHeader {
     length: Length<u16, 0>
 }
 
-#[derive(Debug, Unpack)]
+#[derive(Debug, Unpack, Pack)]
 #[instructor(endian = "little")]
 struct L2capHeader {
     len: Length<u16, 2>,
     cid: u16
 }
 
-#[derive(Debug, Unpack)]
+#[derive(Debug, Unpack, Pack)]
 #[instructor(endian = "little")]
 struct SignalingHeader {
     code: SignalingCodes,
@@ -45,7 +53,7 @@ struct SignalingHeader {
     length: Length<u16, 0>
 }
 
-#[derive(Debug, Unpack)]
+#[derive(Debug, Unpack, Pack)]
 #[repr(u8)]
 enum SignalingCodes {
     CommandReject = 0x01,
@@ -70,7 +78,7 @@ enum SignalingCodes {
     CreditBasedReconfigurationResponse = 0x1A,
 }
 
-#[derive(Debug, Unpack)]
+#[derive(Debug, Unpack, Pack)]
 #[repr(u8)]
 enum BoundaryFlag {
     FirstNonAutomaticallyFlushable = 0b00,
@@ -78,7 +86,7 @@ enum BoundaryFlag {
     FirstAutomaticallyFlushable = 0b10,
 }
 
-#[derive(Debug, Unpack)]
+#[derive(Debug, Unpack, Pack)]
 #[repr(u8)]
 enum BroadcastFlag {
     PointToPoint = 0b00,

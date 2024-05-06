@@ -48,7 +48,7 @@ impl<T: Buf> Buffer for T {
 pub trait BufferMut {
     fn extend_from_slice(&mut self, buf: &[u8]);
 
-    fn write<T, E>(&mut self, value: T)
+    fn write<T, E>(&mut self, value: &T)
         where
             T: Pack<E>,
             E: Endian,

@@ -12,7 +12,7 @@ pub use error::Error;
 pub use buffer::{Buffer, BufferMut};
 pub use bitfield::{BitBuffer, BitStorage};
 #[cfg(feature = "derive")]
-pub use instructor_derive::Unpack;
+pub use instructor_derive::{Unpack, Pack};
 
 
 pub struct LittleEndian;

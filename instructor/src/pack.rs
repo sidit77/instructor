@@ -1,4 +1,4 @@
-use crate::{BufferMut, Endian};
+use crate::{BufferMut, Endian, Error};
 
 pub trait Pack<E: Endian>
     where

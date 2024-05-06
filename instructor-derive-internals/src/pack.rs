@@ -1,13 +1,12 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{format_ident, quote};
-use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields};
-use crate::attr::{Endian, get_bitfield_start, get_repr, is_default, parse_top_level_attributes};
+use quote::{quote, ToTokens};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Index};
+use crate::attr::{Endian, get_bitfield_start, get_repr, parse_top_level_attributes};
 
-pub fn derive_unpack(input: DeriveInput) -> syn::Result<TokenStream> {
+pub fn derive_pack(input: DeriveInput) -> syn::Result<TokenStream> {
     let DeriveInput { ident, data, attrs, ..} = input;
 
     let endian = parse_top_level_attributes(&attrs)?;
-
 
     match data {
         Data::Struct(data) => generate_struct_impl(endian, ident, data),
@@ -21,13 +20,13 @@ pub fn derive_unpack(input: DeriveInput) -> syn::Result<TokenStream> {
 
 fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::Result<TokenStream> {
     let mut bitfield_ident = None;
-    let mut fields = Vec::new();
     let mut statements = Vec::new();
-    for field in data.fields.iter() {
+    for (i, field) in data.fields.iter().enumerate() {
         let ident = field
             .ident
-            .clone()
-            .unwrap_or_else(|| format_ident!("field_{}", fields.len()));
+            .as_ref()
+            .map(|i| i.to_token_stream())
+            .unwrap_or_else(|| Index::from(i).to_token_stream());
         let ty = &field.ty;
         let (bitfield, bitrange) = get_bitfield_start(&field.attrs)?;
         if let Some(bitfield) = bitfield {
@@ -42,7 +41,7 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
                 Some(bitfield_ident) => {
                     statements.push(quote! {
                         #bitfield_ident.set_range(#start, #end);
-                        let #ident: #ty = instructor::Unpack::<instructor::BigEndian>::unpack(&mut #bitfield_ident)?;
+                        let #ident: #ty = instructor::Unpack::<instructor::BigEndian>::unpack(&mut #bitfield_ident);
                     });
                 }
                 None => return Err(syn::Error::new_spanned(field, "bitfield range without bitfield")),
@@ -50,36 +49,21 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
         } else {
             bitfield_ident = None;
             statements.push(quote! {
-                let #ident: #ty = instructor::Unpack::<#endian>::unpack(buffer)?;
+                instructor::Pack::<#endian>::pack(&self.#ident, buffer);
             });
         }
 
-        fields.push(ident);
     }
-    let ret = match data.fields {
-        Fields::Named(_) => quote! {
-                    Self {
-                        #(#fields),*
-                    }
-                },
-        Fields::Unnamed(_) => quote! {
-                    Self (#(#fields),*)
-                },
-        Fields::Unit => quote! {
-                    Self
-                }
-    };
     let generic = match endian {
         Endian::Generic => quote! { <E: instructor::Endian> },
         _ => quote! {},
     };
     let output = quote! {
         #[automatically_derived]
-        impl #generic instructor::Unpack<#endian> for #ident {
+        impl #generic instructor::Pack<#endian> for #ident {
             #[inline]
-            fn unpack<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> core::result::Result<Self, instructor::Error> {
+            fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
                 #(#statements)*
-                Ok(#ret)
             }
         }
     };
@@ -87,41 +71,22 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
 }
 
 fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum) -> syn::Result<TokenStream> {
-    let mut default = None;
-    let mut variants = Vec::new();
     for variant in data.variants.iter() {
-        let ident = &variant.ident;
-        let discr = match &variant.discriminant {
-            Some((_, expr)) => expr,
-            None => return Err(syn::Error::new_spanned(ident, "every variant must have a discriminant")),
-        };
-        if is_default(&variant.attrs)? {
-            if default.is_some() {
-                return Err(syn::Error::new_spanned(ident, "only one variant can be marked as default"));
-            }
-            default = Some(ident.clone());
+        if variant.discriminant.is_none() {
+            return Err(syn::Error::new_spanned(&variant.ident, "every variant must have a discriminant"));
         }
-        variants.push(quote! {
-            #discr => Ok(Self::#ident)
-        });
     }
     let generic = match endian {
         Endian::Generic => quote! { <E: instructor::Endian> },
         _ => quote! {},
     };
-    let default = match default {
-        Some(ident) => quote! { _ => Ok(Self::#ident) },
-        None => quote! { _ => Err(instructor::Error::InvalidValue) },
-    };
     let output = quote! {
         #[automatically_derived]
-        impl #generic instructor::Unpack<#endian> for #ident {
-            fn unpack<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> core::result::Result<Self, instructor::Error> {
-                let value: #repr = instructor::Unpack::<#endian>::unpack(buffer)?;
-                match value {
-                    #(#variants,)*
-                    #default,
-                }
+        impl #generic instructor::Pack<#endian> for #ident {
+            #[inline]
+            fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+                let discriminant: #repr = unsafe { core::mem::transmute_copy(self) };
+                instructor::Pack::<#endian>::pack(&discriminant, buffer)
             }
         }
     };
@@ -138,10 +103,26 @@ mod tests {
         let input = syn::parse_quote! {
             #[instructor(endian = "little")]
             #[repr(align(4))]
-            struct Header(u32, u8);
+            struct Header(u32, u32);
         };
 
-        let output = derive_unpack(input).unwrap();
+        let output = derive_pack(input).unwrap();
+        let formatted = prettyplease::unparse(&syn::parse2(output).unwrap());
+        print!("{}", formatted);
+    }
+
+    #[test]
+    fn print_deserialize2() {
+        let input = syn::parse_quote! {
+            #[instructor(endian = "little")]
+            #[repr(align(4))]
+            struct Header {
+                field1: u32,
+                bar: i8
+            }
+        };
+
+        let output = derive_pack(input).unwrap();
         let formatted = prettyplease::unparse(&syn::parse2(output).unwrap());
         print!("{}", formatted);
     }
@@ -159,7 +140,7 @@ mod tests {
             }
         };
 
-        let output = derive_unpack(input).unwrap();
+        let output = derive_pack(input).unwrap();
         let formatted = prettyplease::unparse(&syn::parse2(output).unwrap());
         print!("{}", formatted);
     }
@@ -167,14 +148,14 @@ mod tests {
     #[test]
     fn print_enum() {
         let input = syn::parse_quote! {
-            #[repr(u8)]
+            #[repr(u32)]
             enum Data {
                 A = 0x01,
                 B = 0x02
             }
         };
 
-        let output = derive_unpack(input).unwrap();
+        let output = derive_pack(input).unwrap();
         let formatted = prettyplease::unparse(&syn::parse2(output).unwrap());
         print!("{}", formatted);
     }
