@@ -1,8 +1,8 @@
-use bytes::Buf;
-use crate::{Endian, Error, Unpack};
+use bytes::{Buf, BufMut};
+use crate::{Endian, Error, Pack, Unpack};
 
 pub trait Buffer {
-    fn copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
+    fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
 
     fn remaining(&self) -> usize;
 
@@ -32,7 +32,7 @@ pub trait Buffer {
 //}
 
 impl<T: Buf> Buffer for T {
-    fn copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error> {
+    fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error> {
         if Buf::remaining(self) < buf.len() {
             return Err(Error::TooShort);
         }
@@ -42,5 +42,23 @@ impl<T: Buf> Buffer for T {
 
     fn remaining(&self) -> usize {
         Buf::remaining(self)
+    }
+}
+
+pub trait BufferMut {
+    fn extend_from_slice(&mut self, buf: &[u8]);
+
+    fn write<T, E>(&mut self, value: T)
+        where
+            T: Pack<E>,
+            E: Endian,
+    {
+        value.pack(self);
+    }
+}
+
+impl<T: BufMut> BufferMut for T {
+    fn extend_from_slice(&mut self, buf: &[u8]) {
+        self.put_slice(buf);
     }
 }

@@ -1,5 +1,5 @@
-use bytes::{Buf, Bytes};
-use instructor::{Buffer, Unpack};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
+use instructor::{Buffer, BufferMut, LittleEndian, Unpack};
 use instructor::utils::Length;
 
 fn main() {
@@ -11,6 +11,10 @@ fn main() {
     let signaling: SignalingHeader = data.read().unwrap();
     println!("{:?}", signaling);
     println!("{:?}", data);
+
+    let mut test = BytesMut::new();
+    test.write::<u16, LittleEndian>(12);
+    println!("{:?}", test.chunk());
 }
 
 #[derive(Debug, Unpack)]
