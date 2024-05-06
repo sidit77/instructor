@@ -29,7 +29,7 @@ impl_bitstorage_trait!(u8, u16, u32, u64, u128);
 pub struct BitBuffer<I: BitStorage> {
     storage: I,
     buffer: I::BUFFER,
-    remaining: Option<usize>
+    remaining: usize
 }
 
 impl<I: BitStorage> BitBuffer<I> {
@@ -60,7 +60,7 @@ impl<I: BitStorage> Buffer for BitBuffer<I> {
         Ok(())
     }
 
-    fn remaining(&self) -> Option<usize> {
+    fn remaining(&self) -> usize {
         self.remaining
     }
 }

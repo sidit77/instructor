@@ -3,16 +3,14 @@ use instructor::{Buffer, Unpack};
 use instructor::utils::Length;
 
 fn main() {
-    let mut data: &[u8] = &[0x00, 0x28, 0x0a, 0x00, 0x06, 0x00, 0x01, 0x00, 0x0a, 0x02, 0x02, 0x00, 0x02, 0x00];
+    let mut data = Bytes::from_static(&[0x00, 0x28, 0x0a, 0x00, 0x06, 0x00, 0x01, 0x00, 0x0a, 0x02, 0x02, 0x00, 0x02, 0x00]);
     let acl: AclHeader = data.read().unwrap();
     println!("{:?}", acl);
     let l2cap: L2capHeader = data.read().unwrap();
     println!("{:?}", l2cap);
     let signaling: SignalingHeader = data.read().unwrap();
     println!("{:?}", signaling);
-    println!("{:X?}", data);
-
-    let b = Bytes::copy_from_slice(data);
+    println!("{:?}", data);
 }
 
 #[derive(Debug, Unpack)]

@@ -12,7 +12,6 @@ impl<E: Endian, T, const OFFSET: isize> Unpack<E> for Length<T, OFFSET>
         let len = buffer.read::<T, E>()?;
         buffer
             .remaining()
-            .expect("The length type can not be used with buffer with unknown size")
             .eq(&len
                 .try_into()
                 .map_err(|_| Error::InvalidValue)?
