@@ -1,18 +1,47 @@
 use std::ops::DerefMut;
 use bytes::{Buf, BufMut};
-use crate::{Endian, Error, Instruct, Exstruct};
+use crate::{Endian, Error, Instruct, Exstruct, LittleEndian, BigEndian, NativeEndian};
 
 pub trait Buffer {
     fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
 
     fn remaining(&self) -> usize;
 
+    #[inline]
     fn read<T, E>(&mut self) -> Result<T, Error>
         where
             T: Exstruct<E>,
             E: Endian,
     {
         T::read_from_buffer(self)
+    }
+
+    #[inline]
+    fn read_le<T>(&mut self) -> Result<T, Error>
+        where T: Exstruct<LittleEndian>
+    {
+        T::read_from_buffer(self)
+    }
+
+    #[inline]
+    fn read_be<T>(&mut self) -> Result<T, Error>
+        where T: Exstruct<BigEndian>
+    {
+        T::read_from_buffer(self)
+    }
+
+    #[inline]
+    fn read_ne<T>(&mut self) -> Result<T, Error>
+        where T: Exstruct<NativeEndian>
+    {
+        T::read_from_buffer(self)
+    }
+
+    fn finish(&self) -> Result<(), Error> {
+        (self.remaining() == 0)
+            .then_some(())
+            .ok_or(Error::TooLong)
+
     }
 }
 

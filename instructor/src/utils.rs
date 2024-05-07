@@ -1,8 +1,10 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
 use crate::{Buffer, BufferMut, Endian, Error, Instruct, Exstruct};
+use crate::pack::WritePrimitive;
+use crate::unpack::ReadPrimitive;
 
-#[derive(Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Length<T, const OFFSET: isize>(T);
 
 impl<T, const OFFSET: isize> Length<T, OFFSET>
@@ -57,5 +59,69 @@ impl<T, const OFFSET: isize> Deref for Length<T, OFFSET> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct u24(u32);
+
+impl u24 {
+    pub const MAX: Self = Self(0x00FF_FFFF);
+    pub const MIN: Self = Self(0x0000_0000);
+}
+
+impl<E: Endian> Exstruct<E> for u24 {
+    #[inline]
+    fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
+        let mut data = [0; 4];
+        buffer.try_copy_to_slice(&mut data[E::map_index(3, 4)])?;
+        Ok(Self(<E as ReadPrimitive>::u32(data)))
+    }
+}
+
+impl<E: Endian> Instruct<E> for u24 {
+
+    #[inline]
+    fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+        let data = <E as WritePrimitive>::u32(self.0);
+        buffer.extend_from_slice(&data[E::map_index(3, 4)]);
+    }
+}
+
+impl Display for u24 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self.0, f)
+    }
+}
+
+impl From<u8> for u24 {
+    fn from(value: u8) -> Self {
+        Self(value as u32)
+    }
+}
+
+impl From<u16> for u24 {
+    fn from(value: u16) -> Self {
+        Self(value as u32)
+    }
+}
+
+impl TryFrom<u32> for u24 {
+    type Error = ();
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        if value > (Self::MAX.0) {
+            Err(())
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+
+impl From<u24> for u32 {
+    fn from(value: u24) -> Self {
+        value.0
     }
 }

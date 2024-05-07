@@ -16,6 +16,13 @@ impl<E: Endian, const N: usize> Exstruct<E> for [u8; N] {
     }
 }
 
+impl<E: Endian> Exstruct<E> for () {
+    #[inline]
+    fn read_from_buffer<B: Buffer + ?Sized>(_: &mut B) -> Result<Self, Error> {
+        Ok(())
+    }
+}
+
 macro_rules! impl_prim_unpack {
     ($($t:ident),+) => {
         $(

@@ -14,6 +14,11 @@ impl<E: Endian, const N: usize> Instruct<E> for [u8; N] {
     }
 }
 
+impl<E: Endian> Instruct<E> for () {
+    #[inline]
+    fn write_to_buffer<B: BufferMut + ?Sized>(&self, _: &mut B) { }
+}
+
 macro_rules! impl_prim_pack {
     ($($t:ident),+) => {
         $(

@@ -26,6 +26,27 @@ pub type NativeEndian = BigEndian;
 
 pub type NetworkEndian = BigEndian;
 
-pub trait Endian: unpack::ReadPrimitive + pack::WritePrimitive {}
+pub trait Endian: unpack::ReadPrimitive + pack::WritePrimitive + map::MapIndex {}
 impl Endian for LittleEndian {}
 impl Endian for BigEndian {}
+
+mod map {
+    use std::ops::Range;
+    use crate::{BigEndian, LittleEndian};
+
+    pub trait MapIndex {
+        fn map_index(n: usize, m: usize) -> Range<usize>;
+    }
+
+    impl MapIndex for LittleEndian {
+        fn map_index(n: usize, _: usize) -> Range<usize> {
+            0..n
+        }
+    }
+
+    impl MapIndex for BigEndian {
+        fn map_index(n: usize, m: usize) -> Range<usize> {
+            (m - n)..m
+        }
+    }
+}

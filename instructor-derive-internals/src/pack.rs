@@ -70,7 +70,7 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
         #[automatically_derived]
         impl #generic instructor::Instruct<#endian> for #ident {
             #[inline]
-            fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+            fn write_to_buffer<B: instructor::BufferMut + ?Sized>(&self, buffer: &mut B) {
                 #(#statements)*
             }
         }
@@ -92,7 +92,7 @@ fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum)
         #[automatically_derived]
         impl #generic instructor::Instruct<#endian> for #ident {
             #[inline]
-            fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+            fn write_to_buffer<B: instructor::BufferMut + ?Sized>(&self, buffer: &mut B) {
                 let discriminant: #repr = unsafe { core::mem::transmute_copy(self) };
                 instructor::Instruct::<#endian>::write_to_buffer(&discriminant, buffer)
             }
