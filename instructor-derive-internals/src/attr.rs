@@ -66,7 +66,7 @@ pub fn is_default(attrs: &Vec<Attribute>) -> syn::Result<bool> {
     Ok(default)
 }
 
-pub fn get_bitfield_start(attrs: &Vec<Attribute>) -> syn::Result<(Option<Ident>, Option<(usize, usize)>)> {
+pub fn get_bitfield_start(attrs: &Vec<Attribute>) -> syn::Result<(Option<Ident>, Option<(u32, u32)>)> {
     let mut bitfield = None;
     let mut bitrange = None;
     for attr in attrs {
@@ -75,9 +75,9 @@ pub fn get_bitfield_start(attrs: &Vec<Attribute>) -> syn::Result<(Option<Ident>,
                 if meta.path.is_ident("bits") {
                     let content;
                     parenthesized!(content in meta.input);
-                    let start: usize = content.parse::<LitInt>()?.base10_parse()?;
+                    let start: u32 = content.parse::<LitInt>()?.base10_parse()?;
                     content.parse::<Token![..]>()?;
-                    let end: usize = content.parse::<LitInt>()?.base10_parse()?;
+                    let end: u32 = content.parse::<LitInt>()?.base10_parse()?;
                     bitrange = Some((start, end));
                     return Ok(())
                 }

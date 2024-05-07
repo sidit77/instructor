@@ -27,12 +27,11 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
             .as_ref()
             .map(|i| i.to_token_stream())
             .unwrap_or_else(|| Index::from(i).to_token_stream());
-        let ty = &field.ty;
         let (bitfield, bitrange) = get_bitfield_start(&field.attrs)?;
         if let Some(bitfield) = bitfield {
             let ident = quote! { ___instructor_bitfield };
             statements.push(quote! {
-                let mut #ident = instructor::BitBuffer::<#bitfield>::new::<#endian, B>(buffer)?;
+                let mut #ident = instructor::BitBuffer::<#bitfield>::empty();
             });
             bitfield_ident = Some(ident);
         }
@@ -41,18 +40,27 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
                 Some(bitfield_ident) => {
                     statements.push(quote! {
                         #bitfield_ident.set_range(#start, #end);
-                        let #ident: #ty = instructor::Unpack::<instructor::BigEndian>::unpack(&mut #bitfield_ident);
+                        instructor::Pack::<instructor::BigEndian>::pack(&self.#ident, &mut #bitfield_ident);
                     });
                 }
                 None => return Err(syn::Error::new_spanned(field, "bitfield range without bitfield")),
             }
         } else {
-            bitfield_ident = None;
+            if let Some(bitfield) = bitfield_ident.take() {
+                statements.push(quote! {
+                    instructor::Pack::<#endian>::pack(&#bitfield, buffer);
+                });
+            }
             statements.push(quote! {
                 instructor::Pack::<#endian>::pack(&self.#ident, buffer);
             });
         }
 
+    }
+    if let Some(bitfield) = bitfield_ident.take() {
+        statements.push(quote! {
+            instructor::Pack::<#endian>::pack(&#bitfield, buffer);
+        });
     }
     let generic = match endian {
         Endian::Generic => quote! { <E: instructor::Endian> },

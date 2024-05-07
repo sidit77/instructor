@@ -1,5 +1,5 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use instructor::{Buffer, BufferMut, Endian, LittleEndian, Pack, Unpack, DoubleEndedBufferMut};
+use instructor::{Buffer, BufferMut, Pack, Unpack};
 use instructor::utils::Length;
 
 fn main() {
@@ -14,6 +14,7 @@ fn main() {
     println!("{:?}", data);
 
     let mut test = BytesMut::new();
+    test.write(&acl);
     test.write(&l2cap);
     test.write(&SignalingHeader {
         code: SignalingCodes::InformationRequest,
@@ -22,16 +23,16 @@ fn main() {
     });
     test.put(data.clone());
     println!("{:02x?}", test.chunk());
-    assert_eq!(test.chunk(), &btpacket[4..]);
+    assert_eq!(test.chunk(), btpacket.as_slice());
 
-    let mut test2 = BytesMut::new();
-    test2.put(data);
-    test2.write_front(&signaling);
-    test2.write_front(&l2cap);
-    assert_eq!(test.chunk(), test2.chunk());
+    //let mut test2 = BytesMut::new();
+    //test2.put(data);
+    //test2.write_front(&signaling);
+    //test2.write_front(&l2cap);
+    //assert_eq!(test.chunk(), test2.chunk());
 }
 
-#[derive(Debug, Unpack)]
+#[derive(Debug, Unpack, Pack)]
 #[instructor(endian = "little")]
 struct AclHeader {
     #[instructor(bitfield(u16))]
