@@ -1,15 +1,15 @@
 use crate::{Buffer, Endian, NativeEndian, Error};
 
-pub trait Unpack<E: Endian>
+pub trait Exstruct<E: Endian>
     where
         Self: Sized,
 {
-    fn unpack<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error>;
+    fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error>;
 }
 
-impl<E: Endian, const N: usize> Unpack<E> for [u8; N] {
+impl<E: Endian, const N: usize> Exstruct<E> for [u8; N] {
     #[inline]
-    fn unpack<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
+    fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
         let mut array = [0; N];
         buffer.try_copy_to_slice(&mut array)?;
         Ok(array)
@@ -19,10 +19,10 @@ impl<E: Endian, const N: usize> Unpack<E> for [u8; N] {
 macro_rules! impl_prim_unpack {
     ($($t:ident),+) => {
         $(
-            impl<E: Endian> Unpack<E> for $t {
+            impl<E: Endian> Exstruct<E> for $t {
                 #[inline]
-                fn unpack<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
-                    Ok(<E as ReadPrimitive>::$t(Unpack::<NativeEndian>::unpack(buffer)?))
+                fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
+                    Ok(<E as ReadPrimitive>::$t(Exstruct::<NativeEndian>::read_from_buffer(buffer)?))
                 }
             }
         )*

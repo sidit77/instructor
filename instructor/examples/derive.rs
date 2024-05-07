@@ -1,5 +1,5 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use instructor::{Buffer, BufferMut, Pack, Unpack};
+use instructor::{Buffer, BufferMut, Instruct, Exstruct};
 use instructor::utils::Length;
 
 fn main() {
@@ -32,7 +32,7 @@ fn main() {
     //assert_eq!(test.chunk(), test2.chunk());
 }
 
-#[derive(Debug, Unpack, Pack)]
+#[derive(Debug, Exstruct, Instruct)]
 #[instructor(endian = "little")]
 struct AclHeader {
     #[instructor(bitfield(u16))]
@@ -45,14 +45,14 @@ struct AclHeader {
     length: Length<u16, 0>
 }
 
-#[derive(Debug, Unpack, Pack)]
+#[derive(Debug, Exstruct, Instruct)]
 #[instructor(endian = "little")]
 struct L2capHeader {
     len: Length<u16, 2>,
     cid: u16
 }
 
-#[derive(Debug, Unpack, Pack)]
+#[derive(Debug, Exstruct, Instruct)]
 #[instructor(endian = "little")]
 struct SignalingHeader {
     code: SignalingCodes,
@@ -60,7 +60,7 @@ struct SignalingHeader {
     length: Length<u16, 0>
 }
 
-#[derive(Debug, Unpack, Pack)]
+#[derive(Debug, Exstruct, Instruct)]
 #[repr(u8)]
 enum SignalingCodes {
     CommandReject = 0x01,
@@ -85,7 +85,7 @@ enum SignalingCodes {
     CreditBasedReconfigurationResponse = 0x1A,
 }
 
-#[derive(Debug, Unpack, Pack)]
+#[derive(Debug, Exstruct, Instruct)]
 #[repr(u8)]
 enum BoundaryFlag {
     FirstNonAutomaticallyFlushable = 0b00,
@@ -93,7 +93,7 @@ enum BoundaryFlag {
     FirstAutomaticallyFlushable = 0b10,
 }
 
-#[derive(Debug, Unpack, Pack)]
+#[derive(Debug, Exstruct, Instruct)]
 #[repr(u8)]
 enum BroadcastFlag {
     PointToPoint = 0b00,

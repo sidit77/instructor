@@ -1,5 +1,5 @@
 use std::mem::size_of;
-use crate::{Buffer, BufferMut, Endian, Error, Pack, Unpack};
+use crate::{Buffer, BufferMut, Endian, Error, Instruct, Exstruct};
 
 pub trait BitStorage: Sized + Copy + Default {
     type Buffer: AsMut<[u8]> + Default;
@@ -49,10 +49,10 @@ impl<I: BitStorage> BitBuffer<I> {
 
     #[inline]
     pub fn new<E, B: Buffer + ?Sized>(source: &mut B) -> Result<Self, Error>
-        where I: Unpack<E>, E: Endian
+        where I: Exstruct<E>, E: Endian
     {
         Ok(Self {
-            storage: Unpack::<E>::unpack(source)?,
+            storage: Exstruct::<E>::read_from_buffer(source)?,
             start: 0,
             end: 0,
             remaining: source.remaining(),
@@ -116,8 +116,8 @@ impl<I: BitStorage> BufferMut for BitBuffer<I> {
     }
 }
 
-impl<I: BitStorage + Pack<E>, E: Endian> Pack<E> for BitBuffer<I> {
-    fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
-        Pack::<E>::pack(&self.storage, buffer);
+impl<I: BitStorage + Instruct<E>, E: Endian> Instruct<E> for BitBuffer<I> {
+    fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+        Instruct::<E>::write_to_buffer(&self.storage, buffer);
     }
 }

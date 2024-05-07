@@ -42,7 +42,7 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
                 Some(bitfield_ident) => {
                     statements.push(quote! {
                         #bitfield_ident.set_range(#start, #end);
-                        let #ident: #ty = instructor::Unpack::<instructor::BigEndian>::unpack(&mut #bitfield_ident)?;
+                        let #ident: #ty = instructor::Exstruct::<instructor::BigEndian>::read_from_buffer(&mut #bitfield_ident)?;
                     });
                 }
                 None => return Err(syn::Error::new_spanned(field, "bitfield range without bitfield")),
@@ -50,7 +50,7 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
         } else {
             bitfield_ident = None;
             statements.push(quote! {
-                let #ident: #ty = instructor::Unpack::<#endian>::unpack(buffer)?;
+                let #ident: #ty = instructor::Exstruct::<#endian>::read_from_buffer(buffer)?;
             });
         }
 
@@ -75,9 +75,9 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
     };
     let output = quote! {
         #[automatically_derived]
-        impl #generic instructor::Unpack<#endian> for #ident {
+        impl #generic instructor::Exstruct<#endian> for #ident {
             #[inline]
-            fn unpack<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> core::result::Result<Self, instructor::Error> {
+            fn read_from_buffer<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> core::result::Result<Self, instructor::Error> {
                 #(#statements)*
                 Ok(#ret)
             }
@@ -115,9 +115,9 @@ fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum)
     };
     let output = quote! {
         #[automatically_derived]
-        impl #generic instructor::Unpack<#endian> for #ident {
-            fn unpack<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> core::result::Result<Self, instructor::Error> {
-                let value: #repr = instructor::Unpack::<#endian>::unpack(buffer)?;
+        impl #generic instructor::Exstruct<#endian> for #ident {
+            fn read_from_buffer<B: instructor::Buffer + ?Sized>(buffer: &mut B) -> core::result::Result<Self, instructor::Error> {
+                let value: #repr = instructor::Exstruct::<#endian>::read_from_buffer(buffer)?;
                 match value {
                     #(#variants,)*
                     #default,

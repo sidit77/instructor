@@ -40,7 +40,7 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
                 Some(bitfield_ident) => {
                     statements.push(quote! {
                         #bitfield_ident.set_range(#start, #end);
-                        instructor::Pack::<instructor::BigEndian>::pack(&self.#ident, &mut #bitfield_ident);
+                        instructor::Instruct::<instructor::BigEndian>::write_to_buffer(&self.#ident, &mut #bitfield_ident);
                     });
                 }
                 None => return Err(syn::Error::new_spanned(field, "bitfield range without bitfield")),
@@ -48,18 +48,18 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
         } else {
             if let Some(bitfield) = bitfield_ident.take() {
                 statements.push(quote! {
-                    instructor::Pack::<#endian>::pack(&#bitfield, buffer);
+                    instructor::Instruct::<#endian>::write_to_buffer(&#bitfield, buffer);
                 });
             }
             statements.push(quote! {
-                instructor::Pack::<#endian>::pack(&self.#ident, buffer);
+                instructor::Instruct::<#endian>::write_to_buffer(&self.#ident, buffer);
             });
         }
 
     }
     if let Some(bitfield) = bitfield_ident.take() {
         statements.push(quote! {
-            instructor::Pack::<#endian>::pack(&#bitfield, buffer);
+            instructor::Instruct::<#endian>::write_to_buffer(&#bitfield, buffer);
         });
     }
     let generic = match endian {
@@ -68,9 +68,9 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
     };
     let output = quote! {
         #[automatically_derived]
-        impl #generic instructor::Pack<#endian> for #ident {
+        impl #generic instructor::Instruct<#endian> for #ident {
             #[inline]
-            fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+            fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
                 #(#statements)*
             }
         }
@@ -90,11 +90,11 @@ fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum)
     };
     let output = quote! {
         #[automatically_derived]
-        impl #generic instructor::Pack<#endian> for #ident {
+        impl #generic instructor::Instruct<#endian> for #ident {
             #[inline]
-            fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+            fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
                 let discriminant: #repr = unsafe { core::mem::transmute_copy(self) };
-                instructor::Pack::<#endian>::pack(&discriminant, buffer)
+                instructor::Instruct::<#endian>::write_to_buffer(&discriminant, buffer)
             }
         }
     };

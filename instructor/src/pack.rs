@@ -1,15 +1,15 @@
 use crate::{BufferMut, Endian};
 
-pub trait Pack<E: Endian>
+pub trait Instruct<E: Endian>
     where
         Self: Sized,
 {
-    fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B);
+    fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B);
 }
 
-impl<E: Endian, const N: usize> Pack<E> for [u8; N] {
+impl<E: Endian, const N: usize> Instruct<E> for [u8; N] {
     #[inline]
-    fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+    fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
         buffer.extend_from_slice(self);
     }
 }
@@ -17,9 +17,9 @@ impl<E: Endian, const N: usize> Pack<E> for [u8; N] {
 macro_rules! impl_prim_pack {
     ($($t:ident),+) => {
         $(
-            impl<E: Endian> Pack<E> for $t {
+            impl<E: Endian> Instruct<E> for $t {
                 #[inline]
-                fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+                fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
                     buffer.extend_from_slice(&<E as WritePrimitive>::$t(*self));
                 }
             }

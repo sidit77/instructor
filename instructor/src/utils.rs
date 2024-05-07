@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
-use crate::{Buffer, BufferMut, Endian, Error, Pack, Unpack};
+use crate::{Buffer, BufferMut, Endian, Error, Instruct, Exstruct};
 
 #[derive(Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Length<T, const OFFSET: isize>(T);
@@ -14,11 +14,11 @@ impl<T, const OFFSET: isize> Length<T, OFFSET>
     }
 }
 
-impl<E: Endian, T, const OFFSET: isize> Unpack<E> for Length<T, OFFSET>
-    where T: TryInto<usize> + Unpack<E> + Copy
+impl<E: Endian, T, const OFFSET: isize> Exstruct<E> for Length<T, OFFSET>
+    where T: TryInto<usize> + Exstruct<E> + Copy
 {
     #[inline]
-    fn unpack<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
+    fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
         let len = buffer.read::<T, E>()?;
         buffer
             .remaining()
@@ -31,11 +31,11 @@ impl<E: Endian, T, const OFFSET: isize> Unpack<E> for Length<T, OFFSET>
     }
 }
 
-impl<E: Endian, T, const OFFSET: isize> Pack<E> for Length<T, OFFSET>
-    where T: Pack<E>
+impl<E: Endian, T, const OFFSET: isize> Instruct<E> for Length<T, OFFSET>
+    where T: Instruct<E>
 {
     #[inline]
-    fn pack<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+    fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
         buffer.write(&self.0);
     }
 }

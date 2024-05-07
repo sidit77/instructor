@@ -1,6 +1,6 @@
 use std::ops::DerefMut;
 use bytes::{Buf, BufMut};
-use crate::{Endian, Error, Pack, Unpack};
+use crate::{Endian, Error, Instruct, Exstruct};
 
 pub trait Buffer {
     fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
@@ -9,10 +9,10 @@ pub trait Buffer {
 
     fn read<T, E>(&mut self) -> Result<T, Error>
         where
-            T: Unpack<E>,
+            T: Exstruct<E>,
             E: Endian,
     {
-        T::unpack(self)
+        T::read_from_buffer(self)
     }
 }
 
@@ -51,10 +51,10 @@ pub trait BufferMut {
 
     fn write<T, E>(&mut self, value: &T)
         where
-            T: Pack<E>,
+            T: Instruct<E>,
             E: Endian,
     {
-        value.pack(self);
+        value.write_to_buffer(self);
     }
 }
 
@@ -67,14 +67,14 @@ impl<T: BufMut> BufferMut for T {
 pub trait DoubleEndedBufferMut: BufferMut {
     fn write_front<T, E>(&mut self, value: &T)
         where
-            T: Pack<E>,
+            T: Instruct<E>,
             E: Endian;
 }
 
 impl<T: BufferMut + DerefMut<Target = [u8]>> DoubleEndedBufferMut for T {
     fn write_front<U, E>(&mut self, value: &U)
         where
-            U: Pack<E>,
+            U: Instruct<E>,
             E: Endian,
     {
         let len = self.len();
