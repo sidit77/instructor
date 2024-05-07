@@ -27,7 +27,7 @@ macro_rules! impl_prim_pack {
     }
 }
 
-impl_prim_pack!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
+impl_prim_pack!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
 
 macro_rules! gen_endian_trait {
     ($($ty:ident),+) => {
@@ -58,4 +58,4 @@ macro_rules! gen_endian_trait {
     }
 }
 
-gen_endian_trait!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
+gen_endian_trait!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
