@@ -1,5 +1,5 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use instructor::{Buffer, BufferMut, Instruct, Exstruct};
+use instructor::{Buffer, Instruct, Exstruct, DoubleEndedBufferMut};
 use instructor::utils::Length;
 
 fn main() {
@@ -14,14 +14,25 @@ fn main() {
     println!("{:?}", data);
 
     let mut test = BytesMut::new();
-    test.write(&acl);
-    test.write(&l2cap);
-    test.write(&SignalingHeader {
+    test.put(data.clone());
+    test.write_front(dbg!(&SignalingHeader {
         code: SignalingCodes::InformationRequest,
         id: 2,
-        length: Length::with_offset(2).unwrap(),
-    });
-    test.put(data.clone());
+        length: Length::new(test.len()).unwrap(),
+    }));
+    test.write_front(dbg!(&L2capHeader {
+        len: Length::new(test.len()).unwrap(),
+        cid: 1,
+    }));
+    test.write_front(dbg!(&AclHeader {
+        handle: 2048,
+        pb: BoundaryFlag::FirstAutomaticallyFlushable,
+        bc: BroadcastFlag::PointToPoint,
+        length: Length::new(test.len()).unwrap(),
+    }));
+
+
+
     println!("{:02x?}", test.chunk());
     assert_eq!(test.chunk(), btpacket.as_slice());
 

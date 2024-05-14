@@ -4,12 +4,12 @@ pub trait Instruct<E: Endian>
     where
         Self: Sized,
 {
-    fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B);
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B);
 }
 
 impl<E: Endian, const N: usize> Instruct<E> for [u8; N] {
     #[inline]
-    fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
         buffer.extend_from_slice(self);
     }
 }

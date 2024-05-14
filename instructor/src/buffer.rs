@@ -2,7 +2,7 @@ use std::ops::DerefMut;
 use bytes::{Buf, BufMut};
 use crate::{Endian, Error, Instruct, Exstruct, LittleEndian, BigEndian, NativeEndian};
 
-pub trait Buffer {
+pub trait Buffer: Sized {
     fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
 
     fn remaining(&self) -> usize;
@@ -75,13 +75,34 @@ impl<T: Buf> Buffer for T {
     }
 }
 
-pub trait BufferMut {
+pub trait BufferMut: Sized {
     fn extend_from_slice(&mut self, buf: &[u8]);
 
     fn write<T, E>(&mut self, value: &T)
         where
             T: Instruct<E>,
             E: Endian,
+    {
+        value.write_to_buffer(self);
+    }
+
+    fn write_le<T>(&mut self, value: &T)
+        where
+            T: Instruct<LittleEndian>,
+    {
+        value.write_to_buffer(self);
+    }
+
+    fn write_be<T>(&mut self, value: &T)
+        where
+            T: Instruct<BigEndian>,
+    {
+        value.write_to_buffer(self);
+    }
+
+    fn write_ne<T>(&mut self, value: &T)
+        where
+            T: Instruct<NativeEndian>,
     {
         value.write_to_buffer(self);
     }

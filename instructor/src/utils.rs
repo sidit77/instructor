@@ -10,9 +10,13 @@ pub struct Length<T, const OFFSET: isize>(T);
 impl<T, const OFFSET: isize> Length<T, OFFSET>
     where T: TryFrom<usize>
 {
-    pub fn with_offset(len: usize) -> Result<Self, Error> {
-        let len = T::try_from(len.saturating_add_signed(-OFFSET)).map_err(|_| Error::InvalidValue)?;
+    pub fn new(len: usize) -> Result<Self, Error> {
+        let len = T::try_from(len).map_err(|_| Error::InvalidValue)?;
         Ok(Self(len))
+    }
+
+    pub fn with_offset(len: usize) -> Result<Self, Error> {
+        Self::new(len.saturating_add_signed(-OFFSET))
     }
 }
 
@@ -59,6 +63,48 @@ impl<T, const OFFSET: isize> Deref for Length<T, OFFSET> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+pub trait DynBuffer {
+    fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
+
+    fn remaining(&self) -> usize;
+}
+
+impl<T: Buffer> DynBuffer for T {
+    fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error> {
+        T::try_copy_to_slice(self, buf)
+    }
+
+    fn remaining(&self) -> usize {
+        T::remaining(self)
+    }
+}
+
+pub struct Limit<'a> {
+    buffer: &'a mut dyn DynBuffer,
+    remaining: usize,
+}
+
+impl<'a> Limit<'a> {
+    pub fn new<B: DynBuffer>(buffer: &'a mut B, remaining: usize) -> Self {
+        Self { buffer, remaining }
+    }
+}
+
+impl<'a> Buffer for Limit<'a> {
+    fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error> {
+        if self.remaining < buf.len() {
+            return Err(Error::TooShort);
+        }
+        let result = self.buffer.try_copy_to_slice(buf)?;
+        self.remaining -= buf.len();
+        Ok(result)
+    }
+
+    fn remaining(&self) -> usize {
+        self.remaining.min(self.buffer.remaining())
     }
 }
 

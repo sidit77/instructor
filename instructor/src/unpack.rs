@@ -4,12 +4,12 @@ pub trait Exstruct<E: Endian>
     where
         Self: Sized,
 {
-    fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error>;
+    fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error>;
 }
 
 impl<E: Endian, const N: usize> Exstruct<E> for [u8; N] {
     #[inline]
-    fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
+    fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
         let mut array = [0; N];
         buffer.try_copy_to_slice(&mut array)?;
         Ok(array)
@@ -18,7 +18,7 @@ impl<E: Endian, const N: usize> Exstruct<E> for [u8; N] {
 
 impl<E: Endian> Exstruct<E> for () {
     #[inline]
-    fn read_from_buffer<B: Buffer + ?Sized>(_: &mut B) -> Result<Self, Error> {
+    fn read_from_buffer<B: Buffer>(_: &mut B) -> Result<Self, Error> {
         Ok(())
     }
 }
@@ -28,7 +28,7 @@ macro_rules! impl_prim_unpack {
         $(
             impl<E: Endian> Exstruct<E> for $t {
                 #[inline]
-                fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
+                fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
                     Ok(<E as ReadPrimitive>::$t(Exstruct::<NativeEndian>::read_from_buffer(buffer)?))
                 }
             }
