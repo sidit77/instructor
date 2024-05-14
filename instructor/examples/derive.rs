@@ -1,6 +1,6 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use instructor::{Buffer, Instruct, Exstruct, DoubleEndedBufferMut};
 use instructor::utils::Length;
+use instructor::{Buffer, DoubleEndedBufferMut, Exstruct, Instruct};
 
 fn main() {
     let btpacket = &[0x00, 0x28, 0x0a, 0x00, 0x06, 0x00, 0x01, 0x00, 0x0a, 0x02, 0x02, 0x00, 0x02, 0x00];
@@ -18,20 +18,18 @@ fn main() {
     test.write_front(dbg!(&SignalingHeader {
         code: SignalingCodes::InformationRequest,
         id: 2,
-        length: Length::new(test.len()).unwrap(),
+        length: Length::new(test.len()).unwrap()
     }));
     test.write_front(dbg!(&L2capHeader {
         len: Length::new(test.len()).unwrap(),
-        cid: 1,
+        cid: 1
     }));
     test.write_front(dbg!(&AclHeader {
         handle: 2048,
         pb: BoundaryFlag::FirstAutomaticallyFlushable,
         bc: BroadcastFlag::PointToPoint,
-        length: Length::new(test.len()).unwrap(),
+        length: Length::new(test.len()).unwrap()
     }));
-
-
 
     println!("{:02x?}", test.chunk());
     assert_eq!(test.chunk(), btpacket.as_slice());
@@ -93,7 +91,7 @@ enum SignalingCodes {
     CreditBasedConnectionRequest = 0x17,
     CreditBasedConnectionResponse = 0x18,
     CreditBasedReconfigurationRequest = 0x19,
-    CreditBasedReconfigurationResponse = 0x1A,
+    CreditBasedReconfigurationResponse = 0x1A
 }
 
 #[derive(Debug, Exstruct, Instruct)]
@@ -101,14 +99,14 @@ enum SignalingCodes {
 enum BoundaryFlag {
     FirstNonAutomaticallyFlushable = 0b00,
     Continuing = 0b01,
-    FirstAutomaticallyFlushable = 0b10,
+    FirstAutomaticallyFlushable = 0b10
 }
 
 #[derive(Debug, Exstruct, Instruct)]
 #[repr(u8)]
 enum BroadcastFlag {
     PointToPoint = 0b00,
-    BrEdrBroadcast = 0b01,
+    BrEdrBroadcast = 0b01
 }
 
 #[derive(Debug, Instruct)]
@@ -116,5 +114,5 @@ enum BroadcastFlag {
 enum Headers {
     Acl(AclHeader),
     L2cap(L2capHeader),
-    Signaling(SignalingHeader),
+    Signaling(SignalingHeader)
 }

@@ -1,12 +1,12 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Attribute, LitInt, LitStr, parenthesized, Token};
+use syn::{parenthesized, Attribute, LitInt, LitStr, Token};
 
 #[derive(Debug)]
 pub enum Endian {
     Little,
     Big,
-    Generic,
+    Generic
 }
 
 impl ToTokens for Endian {
@@ -14,7 +14,7 @@ impl ToTokens for Endian {
         let ident = match self {
             Endian::Little => quote! { instructor::LittleEndian },
             Endian::Big => quote! { instructor::BigEndian },
-            Endian::Generic => quote! { E },
+            Endian::Generic => quote! { E }
         };
         ident.to_tokens(tokens);
     }
@@ -30,8 +30,9 @@ pub fn parse_top_level_attributes(attrs: &Vec<Attribute>) -> syn::Result<Endian>
                     return match lit.value().as_str() {
                         "little" => Ok(Endian::Little),
                         "big" => Ok(Endian::Big),
-                        _ => Err(meta.error("endian can either be \"little\" or \"big\"")),
-                    }.map(|e| endian = e);
+                        _ => Err(meta.error("endian can either be \"little\" or \"big\""))
+                    }
+                    .map(|e| endian = e);
                 }
                 Err(meta.error("unknown attribute"))
             })?;
@@ -80,7 +81,7 @@ pub fn get_bitfield_start(attrs: &Vec<Attribute>) -> syn::Result<(Option<Ident>,
                     content.parse::<Token![..]>()?;
                     let end: u32 = content.parse::<LitInt>()?.base10_parse()?;
                     bitrange = Some((start, end));
-                    return Ok(())
+                    return Ok(());
                 }
                 if meta.path.is_ident("bitfield") {
                     let content;
@@ -90,7 +91,8 @@ pub fn get_bitfield_start(attrs: &Vec<Attribute>) -> syn::Result<(Option<Ident>,
                     return Ok(());
                 }
                 Err(meta.error("unknown attribute"))
-            }).unwrap();
+            })
+            .unwrap();
         }
     }
     Ok((bitfield, bitrange))

@@ -5,7 +5,7 @@ pub enum Error {
     TooShort,
     TooLong,
     InvalidValue,
-    UnexpectedLength,
+    UnexpectedLength
 }
 
 impl Display for Error {
@@ -14,7 +14,7 @@ impl Display for Error {
             Error::TooShort => write!(f, "Packet too short"),
             Error::TooLong => write!(f, "Packet too long"),
             Error::InvalidValue => write!(f, "Invalid value"),
-            Error::UnexpectedLength => write!(f, "Unexpected length"),
+            Error::UnexpectedLength => write!(f, "Unexpected length")
         }
     }
 }

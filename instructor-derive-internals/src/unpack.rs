@@ -1,21 +1,21 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields};
-use crate::attr::{Endian, get_bitfield_start, get_repr, is_default, parse_top_level_attributes};
+
+use crate::attr::{get_bitfield_start, get_repr, is_default, parse_top_level_attributes, Endian};
 
 pub fn derive_unpack(input: DeriveInput) -> syn::Result<TokenStream> {
-    let DeriveInput { ident, data, attrs, ..} = input;
+    let DeriveInput { ident, data, attrs, .. } = input;
 
     let endian = parse_top_level_attributes(&attrs)?;
-
 
     match data {
         Data::Struct(data) => generate_struct_impl(endian, ident, data),
         Data::Enum(data) => match get_repr(&attrs)? {
             Some(repr) => generate_enum_impl(endian, repr, ident, data),
-            None => Err(syn::Error::new_spanned(ident, "enums must have a repr attribute")),
-        }
-        Data::Union(_) => Err(syn::Error::new_spanned(ident, "unions are not supported")),
+            None => Err(syn::Error::new_spanned(ident, "enums must have a repr attribute"))
+        },
+        Data::Union(_) => Err(syn::Error::new_spanned(ident, "unions are not supported"))
     }
 }
 
@@ -45,7 +45,7 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
                         let #ident: #ty = instructor::Exstruct::<instructor::BigEndian>::read_from_buffer(&mut #bitfield_ident)?;
                     });
                 }
-                None => return Err(syn::Error::new_spanned(field, "bitfield range without bitfield")),
+                None => return Err(syn::Error::new_spanned(field, "bitfield range without bitfield"))
             }
         } else {
             bitfield_ident = None;
@@ -58,20 +58,20 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
     }
     let ret = match data.fields {
         Fields::Named(_) => quote! {
-                    Self {
-                        #(#fields),*
-                    }
-                },
+            Self {
+                #(#fields),*
+            }
+        },
         Fields::Unnamed(_) => quote! {
-                    Self (#(#fields),*)
-                },
+            Self (#(#fields),*)
+        },
         Fields::Unit => quote! {
-                    Self
-                }
+            Self
+        }
     };
     let generic = match endian {
         Endian::Generic => quote! { <E: instructor::Endian> },
-        _ => quote! {},
+        _ => quote! {}
     };
     let output = quote! {
         #[automatically_derived]
@@ -93,7 +93,7 @@ fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum)
         let ident = &variant.ident;
         let discr = match &variant.discriminant {
             Some((_, expr)) => expr,
-            None => return Err(syn::Error::new_spanned(ident, "every variant must have a discriminant")),
+            None => return Err(syn::Error::new_spanned(ident, "every variant must have a discriminant"))
         };
         if is_default(&variant.attrs)? {
             if default.is_some() {
@@ -107,11 +107,11 @@ fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum)
     }
     let generic = match endian {
         Endian::Generic => quote! { <E: instructor::Endian> },
-        _ => quote! {},
+        _ => quote! {}
     };
     let default = match default {
         Some(ident) => quote! { _ => Ok(Self::#ident) },
-        None => quote! { _ => Err(instructor::Error::InvalidValue) },
+        None => quote! { _ => Err(instructor::Error::InvalidValue) }
     };
     let output = quote! {
         #[automatically_derived]
@@ -127,7 +127,6 @@ fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum)
     };
     Ok(output)
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -1,19 +1,17 @@
-
-mod unpack;
-mod error;
-mod buffer;
-pub mod utils;
 mod bitfield;
+mod buffer;
+mod error;
 mod pack;
+mod unpack;
+pub mod utils;
 
-pub use unpack::Exstruct;
-pub use pack::Instruct;
-pub use error::Error;
-pub use buffer::{Buffer, BufferMut, DoubleEndedBufferMut};
 pub use bitfield::{BitBuffer, BitStorage};
+pub use buffer::{Buffer, BufferMut, DoubleEndedBufferMut};
+pub use error::Error;
 #[cfg(feature = "derive")]
 pub use instructor_derive::{Exstruct, Instruct};
-
+pub use pack::Instruct;
+pub use unpack::Exstruct;
 
 pub struct LittleEndian;
 pub struct BigEndian;
@@ -32,6 +30,7 @@ impl Endian for BigEndian {}
 
 mod map {
     use std::ops::Range;
+
     use crate::{BigEndian, LittleEndian};
 
     pub trait MapIndex {

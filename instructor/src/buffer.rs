@@ -1,6 +1,8 @@
 use std::ops::DerefMut;
+
 use bytes::{Buf, BufMut};
-use crate::{Endian, Error, Instruct, Exstruct, LittleEndian, BigEndian, NativeEndian};
+
+use crate::{BigEndian, Endian, Error, Exstruct, Instruct, LittleEndian, NativeEndian};
 
 pub trait Buffer: Sized {
     fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
@@ -9,39 +11,39 @@ pub trait Buffer: Sized {
 
     #[inline]
     fn read<T, E>(&mut self) -> Result<T, Error>
-        where
-            T: Exstruct<E>,
-            E: Endian,
+    where
+        T: Exstruct<E>,
+        E: Endian
     {
         T::read_from_buffer(self)
     }
 
     #[inline]
     fn read_le<T>(&mut self) -> Result<T, Error>
-        where T: Exstruct<LittleEndian>
+    where
+        T: Exstruct<LittleEndian>
     {
         T::read_from_buffer(self)
     }
 
     #[inline]
     fn read_be<T>(&mut self) -> Result<T, Error>
-        where T: Exstruct<BigEndian>
+    where
+        T: Exstruct<BigEndian>
     {
         T::read_from_buffer(self)
     }
 
     #[inline]
     fn read_ne<T>(&mut self) -> Result<T, Error>
-        where T: Exstruct<NativeEndian>
+    where
+        T: Exstruct<NativeEndian>
     {
         T::read_from_buffer(self)
     }
 
     fn finish(&self) -> Result<(), Error> {
-        (self.remaining() == 0)
-            .then_some(())
-            .ok_or(Error::TooLong)
-
+        (self.remaining() == 0).then_some(()).ok_or(Error::TooLong)
     }
 }
 
@@ -79,30 +81,30 @@ pub trait BufferMut: Sized {
     fn extend_from_slice(&mut self, buf: &[u8]);
 
     fn write<T, E>(&mut self, value: &T)
-        where
-            T: Instruct<E>,
-            E: Endian,
+    where
+        T: Instruct<E>,
+        E: Endian
     {
         value.write_to_buffer(self);
     }
 
     fn write_le<T>(&mut self, value: &T)
-        where
-            T: Instruct<LittleEndian>,
+    where
+        T: Instruct<LittleEndian>
     {
         value.write_to_buffer(self);
     }
 
     fn write_be<T>(&mut self, value: &T)
-        where
-            T: Instruct<BigEndian>,
+    where
+        T: Instruct<BigEndian>
     {
         value.write_to_buffer(self);
     }
 
     fn write_ne<T>(&mut self, value: &T)
-        where
-            T: Instruct<NativeEndian>,
+    where
+        T: Instruct<NativeEndian>
     {
         value.write_to_buffer(self);
     }
@@ -116,16 +118,16 @@ impl<T: BufMut> BufferMut for T {
 
 pub trait DoubleEndedBufferMut: BufferMut {
     fn write_front<T, E>(&mut self, value: &T)
-        where
-            T: Instruct<E>,
-            E: Endian;
+    where
+        T: Instruct<E>,
+        E: Endian;
 }
 
 impl<T: BufferMut + DerefMut<Target = [u8]>> DoubleEndedBufferMut for T {
     fn write_front<U, E>(&mut self, value: &U)
-        where
-            U: Instruct<E>,
-            E: Endian,
+    where
+        U: Instruct<E>,
+        E: Endian
     {
         let len = self.len();
         self.write(value);

@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use syn::{DeriveInput, parse_macro_input};
+use syn::{parse_macro_input, DeriveInput};
 
 #[proc_macro_derive(Exstruct, attributes(instructor))]
 pub fn derive_unpack(input: TokenStream) -> TokenStream {

@@ -1,5 +1,6 @@
 use std::mem::size_of;
-use crate::{Buffer, BufferMut, Endian, Error, Instruct, Exstruct};
+
+use crate::{Buffer, BufferMut, Endian, Error, Exstruct, Instruct};
 
 pub trait BitStorage: Sized + Copy + Default {
     type Buffer: AsMut<[u8]> + Default;
@@ -46,22 +47,22 @@ pub struct BitBuffer<I: BitStorage> {
 }
 
 impl<I: BitStorage> BitBuffer<I> {
-
     #[inline]
     pub fn new<E, B: Buffer + ?Sized>(source: &mut B) -> Result<Self, Error>
-        where I: Exstruct<E>, E: Endian
+    where
+        I: Exstruct<E>,
+        E: Endian
     {
         Ok(Self {
             storage: Exstruct::<E>::read_from_buffer(source)?,
             start: 0,
             end: 0,
-            remaining: source.remaining(),
+            remaining: source.remaining()
         })
     }
 }
 
 impl<I: BitStorage> BitBuffer<I> {
-
     #[inline]
     pub fn empty() -> Self {
         Self {
@@ -80,7 +81,6 @@ impl<I: BitStorage> BitBuffer<I> {
 }
 
 impl<I: BitStorage> Buffer for BitBuffer<I> {
-
     #[inline]
     fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error> {
         let mut shifted = self.storage.extract(self.start, self.end);
@@ -100,7 +100,6 @@ impl<I: BitStorage> Buffer for BitBuffer<I> {
 }
 
 impl<I: BitStorage> BufferMut for BitBuffer<I> {
-
     #[inline]
     fn extend_from_slice(&mut self, buf: &[u8]) {
         let mut buffer = I::Buffer::default();

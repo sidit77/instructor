@@ -1,14 +1,16 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
-use crate::{Buffer, BufferMut, Endian, Error, Instruct, Exstruct};
+
 use crate::pack::WritePrimitive;
 use crate::unpack::ReadPrimitive;
+use crate::{Buffer, BufferMut, Endian, Error, Exstruct, Instruct};
 
 #[derive(Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Length<T, const OFFSET: isize>(T);
 
 impl<T, const OFFSET: isize> Length<T, OFFSET>
-    where T: TryFrom<usize>
+where
+    T: TryFrom<usize>
 {
     pub fn new(len: usize) -> Result<Self, Error> {
         let len = T::try_from(len).map_err(|_| Error::InvalidValue)?;
@@ -21,7 +23,8 @@ impl<T, const OFFSET: isize> Length<T, OFFSET>
 }
 
 impl<E: Endian, T, const OFFSET: isize> Exstruct<E> for Length<T, OFFSET>
-    where T: TryInto<usize> + Exstruct<E> + Copy
+where
+    T: TryInto<usize> + Exstruct<E> + Copy
 {
     #[inline]
     fn read_from_buffer<B: Buffer + ?Sized>(buffer: &mut B) -> Result<Self, Error> {
@@ -38,7 +41,8 @@ impl<E: Endian, T, const OFFSET: isize> Exstruct<E> for Length<T, OFFSET>
 }
 
 impl<E: Endian, T, const OFFSET: isize> Instruct<E> for Length<T, OFFSET>
-    where T: Instruct<E>
+where
+    T: Instruct<E>
 {
     #[inline]
     fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
@@ -84,7 +88,7 @@ impl<T: Buffer> DynBuffer for T {
 
 pub struct Limit<'a> {
     buffer: &'a mut dyn DynBuffer,
-    remaining: usize,
+    remaining: usize
 }
 
 impl<'a> Limit<'a> {
@@ -108,7 +112,6 @@ impl<'a> Buffer for Limit<'a> {
     }
 }
 
-
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct u24(u32);
@@ -128,7 +131,6 @@ impl<E: Endian> Exstruct<E> for u24 {
 }
 
 impl<E: Endian> Instruct<E> for u24 {
-
     #[inline]
     fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
         let data = <E as WritePrimitive>::u32(self.0);
@@ -158,11 +160,7 @@ impl TryFrom<u32> for u24 {
     type Error = ();
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        if value > (Self::MAX.0) {
-            Err(())
-        } else {
-            Ok(Self(value))
-        }
+        if value > (Self::MAX.0) { Err(()) } else { Ok(Self(value)) }
     }
 }
 

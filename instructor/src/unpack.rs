@@ -1,8 +1,8 @@
-use crate::{Buffer, Endian, NativeEndian, Error};
+use crate::{Buffer, Endian, Error, NativeEndian};
 
 pub trait Exstruct<E: Endian>
-    where
-        Self: Sized,
+where
+    Self: Sized
 {
     fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error>;
 }
