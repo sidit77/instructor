@@ -66,6 +66,7 @@ pub fn is_default(attrs: &Vec<Attribute>) -> syn::Result<bool> {
     Ok(default)
 }
 
+#[allow(clippy::type_complexity)]
 pub fn get_bitfield_start(attrs: &Vec<Attribute>) -> syn::Result<(Option<Ident>, Option<(u32, u32)>)> {
     let mut bitfield = None;
     let mut bitrange = None;

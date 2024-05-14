@@ -98,9 +98,9 @@ impl<'a> Buffer for Limit<'a> {
         if self.remaining < buf.len() {
             return Err(Error::TooShort);
         }
-        let result = self.buffer.try_copy_to_slice(buf)?;
+        self.buffer.try_copy_to_slice(buf)?;
         self.remaining -= buf.len();
-        Ok(result)
+        Ok(())
     }
 
     fn remaining(&self) -> usize {
