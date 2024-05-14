@@ -1,6 +1,6 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
-use syn::{Data, DataEnum, DataStruct, DeriveInput, Index};
+use quote::{format_ident, quote, ToTokens};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Fields, Index};
 use crate::attr::{Endian, get_bitfield_start, get_repr, parse_top_level_attributes};
 
 pub fn derive_pack(input: DeriveInput) -> syn::Result<TokenStream> {
@@ -11,8 +11,8 @@ pub fn derive_pack(input: DeriveInput) -> syn::Result<TokenStream> {
     match data {
         Data::Struct(data) => generate_struct_impl(endian, ident, data),
         Data::Enum(data) => match get_repr(&attrs)? {
-            Some(repr) => generate_enum_impl(endian, repr, ident, data),
-            None => Err(syn::Error::new_spanned(ident, "enums must have a repr attribute")),
+            Some(repr) => generate_int_enum_impl(endian, repr, ident, data),
+            None => generate_data_enum_impl(endian, ident, data),
         }
         Data::Union(_) => Err(syn::Error::new_spanned(ident, "unions are not supported")),
     }
@@ -78,7 +78,7 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
     Ok(output)
 }
 
-fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum) -> syn::Result<TokenStream> {
+fn generate_int_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum) -> syn::Result<TokenStream> {
     for variant in data.variants.iter() {
         if variant.discriminant.is_none() {
             return Err(syn::Error::new_spanned(&variant.ident, "every variant must have a discriminant"));
@@ -95,6 +95,56 @@ fn generate_enum_impl(endian: Endian, repr: Ident, ident: Ident, data: DataEnum)
             fn write_to_buffer<B: instructor::BufferMut>(&self, buffer: &mut B) {
                 let discriminant: #repr = unsafe { core::mem::transmute_copy(self) };
                 instructor::Instruct::<#endian>::write_to_buffer(&discriminant, buffer)
+            }
+        }
+    };
+    Ok(output)
+}
+
+fn generate_data_enum_impl(endian: Endian, ident: Ident, data: DataEnum) -> syn::Result<TokenStream> {
+    let mut matches = Vec::new();
+    for variant in data.variants.iter() {
+        if variant.discriminant.is_some() {
+            return Err(syn::Error::new_spanned(&variant.ident, "disciminants are not supported for data enums"));
+        }
+        let ident = &variant.ident;
+        let fields = &variant
+            .fields
+            .iter()
+            .enumerate()
+            .map(|(i, f)| f
+                .ident
+                .clone()
+                .unwrap_or_else(|| format_ident!("arg{}", i)))
+            .collect::<Vec<_>>();
+
+        matches.push(match &variant.fields {
+            Fields::Named(_) => quote! {
+                Self::#ident { #(#fields),* } => {
+                    #(instructor::Instruct::<#endian>::write_to_buffer(#fields, buffer);)*
+                }
+            },
+            Fields::Unnamed(_) => quote! {
+                Self::#ident(#(#fields),*) => {
+                    #(instructor::Instruct::<#endian>::write_to_buffer(#fields, buffer);)*
+                }
+            },
+            Fields::Unit => quote! { Self::#ident => {} },
+        });
+
+    }
+    let generic = match endian {
+        Endian::Generic => quote! { <E: instructor::Endian> },
+        _ => quote! {},
+    };
+    let output = quote! {
+        #[automatically_derived]
+        impl #generic instructor::Instruct<#endian> for #ident {
+            #[inline]
+            fn write_to_buffer<B: instructor::BufferMut>(&self, buffer: &mut B) {
+                match self {
+                    #(#matches)*
+                }
             }
         }
     };
@@ -160,6 +210,24 @@ mod tests {
             enum Data {
                 A = 0x01,
                 B = 0x02
+            }
+        };
+
+        let output = derive_pack(input).unwrap();
+        let formatted = prettyplease::unparse(&syn::parse2(output).unwrap());
+        print!("{}", formatted);
+    }
+
+    #[test]
+    fn print_enum_2() {
+        let input = syn::parse_quote! {
+            enum Data {
+                A {
+                    a: u8,
+                    b: u16
+                },
+                B(i32),
+                C
             }
         };
 

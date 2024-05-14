@@ -110,3 +110,11 @@ enum BroadcastFlag {
     PointToPoint = 0b00,
     BrEdrBroadcast = 0b01,
 }
+
+#[derive(Debug, Instruct)]
+#[instructor(endian = "little")]
+enum Headers {
+    Acl(AclHeader),
+    L2cap(L2capHeader),
+    Signaling(SignalingHeader),
+}
