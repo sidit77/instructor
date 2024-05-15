@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use crate::{BufferMut, Endian};
 
 pub trait Instruct<E: Endian>
@@ -17,6 +18,22 @@ impl<E: Endian, const N: usize> Instruct<E> for [u8; N] {
 impl<E: Endian> Instruct<E> for () {
     #[inline]
     fn write_to_buffer<B: BufferMut + ?Sized>(&self, _: &mut B) {}
+}
+
+impl<E: Endian> Instruct<E> for Bytes {
+    #[inline]
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
+        buffer.extend_from_slice(self.as_ref());
+    }
+}
+
+impl<E: Endian, T: Instruct<E>> Instruct<E> for Vec<T> {
+    #[inline]
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
+        for item in self {
+            buffer.write::<T, E>(item);
+        }
+    }
 }
 
 macro_rules! impl_prim_pack {
