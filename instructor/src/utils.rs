@@ -1,9 +1,9 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Display, Formatter, LowerHex, UpperHex};
 use std::ops::Deref;
 
 use crate::pack::WritePrimitive;
 use crate::unpack::ReadPrimitive;
-use crate::{Buffer, BufferMut, Endian, Error, Exstruct, Instruct};
+use crate::{BitStorage, Buffer, BufferMut, Endian, Error, Exstruct, Instruct};
 
 #[derive(Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Length<T, const OFFSET: isize>(T);
@@ -113,12 +113,13 @@ impl<'a> Buffer for Limit<'a> {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct u24(u32);
 
 impl u24 {
     pub const MAX: Self = Self(0x00FF_FFFF);
     pub const MIN: Self = Self(0x0000_0000);
+    pub const BITS: u32 = 24;
 }
 
 impl<E: Endian> Exstruct<E> for u24 {
@@ -141,6 +142,24 @@ impl<E: Endian> Instruct<E> for u24 {
 impl Display for u24 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.0, f)
+    }
+}
+
+impl Debug for u24 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.0, f)
+    }
+}
+
+impl LowerHex for u24 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        LowerHex::fmt(&self.0, f)
+    }
+}
+
+impl UpperHex for u24 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        UpperHex::fmt(&self.0, f)
     }
 }
 
@@ -169,3 +188,27 @@ impl From<u24> for u32 {
         value.0
     }
 }
+
+impl BitStorage for u24 {
+    type Buffer = [u8; 3];
+
+    #[inline]
+    fn extract(&self, start: u32, end: u32) -> Self::Buffer {
+        debug_assert!(start < end);
+        debug_assert!(end <= Self::BITS);
+        let mask = (1 << (end - start)) - 1;
+        let masked = (self.0 >> start) & mask;
+        let bytes = masked.to_be_bytes();
+        [bytes[1], bytes[2], bytes[3]]
+    }
+
+    fn insert(&mut self, start: u32, end: u32, value: Self::Buffer) {
+        debug_assert!(start < end);
+        debug_assert!(end <= Self::BITS);
+        let mask = (1 << (end - start)) - 1;
+        let value = u32::from_be_bytes([0, value[0], value[1], value[2]]);
+        let masked = (value & mask) << start;
+        *self = Self(self.0 | masked);
+    }
+}
+
