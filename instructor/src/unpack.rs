@@ -23,6 +23,13 @@ impl<E: Endian> Exstruct<E> for () {
     }
 }
 
+impl<E: Endian> Exstruct<E> for bool {
+    #[inline]
+    fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
+        Ok(buffer.read::<u8, E>()? != 0)
+    }
+}
+
 macro_rules! impl_prim_unpack {
     ($($t:ident),+) => {
         $(
