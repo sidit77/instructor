@@ -30,6 +30,11 @@ fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::
             .unwrap_or_else(|| Index::from(i).to_token_stream());
         let (bitfield, bitrange) = get_bitfield_start(&field.attrs)?;
         if let Some(bitfield) = bitfield {
+            if let Some(bitfield) = bitfield_ident.take() {
+                statements.push(quote! {
+                    instructor::Instruct::<#endian>::write_to_buffer(&#bitfield, buffer);
+                });
+            }
             let ident = quote! { ___instructor_bitfield };
             statements.push(quote! {
                 let mut #ident = instructor::BitBuffer::<#bitfield>::empty();

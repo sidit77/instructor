@@ -20,6 +20,13 @@ impl<E: Endian> Instruct<E> for () {
     fn write_to_buffer<B: BufferMut + ?Sized>(&self, _: &mut B) {}
 }
 
+impl<E: Endian> Instruct<E> for bool {
+    #[inline]
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
+        buffer.write::<u8, E>(&u8::from(*self));
+    }
+}
+
 impl<E: Endian> Instruct<E> for Bytes {
     #[inline]
     fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
