@@ -7,8 +7,11 @@ use crate::attr::{get_bitfield_start, get_repr, is_default, parse_top_level_attr
 pub fn derive_unpack(input: DeriveInput) -> syn::Result<TokenStream> {
     let DeriveInput { ident, data, attrs, .. } = input;
 
-    let endian = parse_top_level_attributes(&attrs)?;
+    let (endian, bitflags) = parse_top_level_attributes(&attrs)?;
 
+    if bitflags {
+        return generate_bitflags_impl(endian, ident);
+    }
     match data {
         Data::Struct(data) => generate_struct_impl(endian, ident, data),
         Data::Enum(data) => match get_repr(&attrs)? {
@@ -17,6 +20,24 @@ pub fn derive_unpack(input: DeriveInput) -> syn::Result<TokenStream> {
         },
         Data::Union(_) => Err(syn::Error::new_spanned(ident, "unions are not supported"))
     }
+}
+
+fn generate_bitflags_impl(endian: Endian, ident: Ident) -> syn::Result<TokenStream> {
+    let generic = match endian {
+        Endian::Generic => quote! { <E: instructor::Endian> },
+        _ => quote! {}
+    };
+    let output = quote! {
+        #[automatically_derived]
+        impl #generic instructor::Exstruct<#endian> for #ident {
+            #[inline]
+            fn read_from_buffer<B: instructor::Buffer>(buffer: &mut B) -> Result<Self, instructor::Error> {
+                Self::from_bits(instructor::Exstruct::<#endian>::read_from_buffer(buffer)?)
+                    .ok_or(instructor::Error::InvalidValue)
+            }
+        }
+    };
+    Ok(output)
 }
 
 fn generate_struct_impl(endian: Endian, ident: Ident, data: DataStruct) -> syn::Result<TokenStream> {
@@ -135,7 +156,7 @@ mod tests {
     #[test]
     fn print_deserialize() {
         let input = syn::parse_quote! {
-            #[instructor(endian = "little")]
+            #[instructor(endian = "little", bitflags)]
             #[repr(align(4))]
             struct Header(u32, u8);
         };

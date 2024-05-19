@@ -9,3 +9,6 @@ derive = ["instructor-derive"]
 [dependencies]
 bytes = "1"
 instructor-derive = { path = "../instructor-derive", optional = true }
+
+[dev-dependencies]
+bitflags = "2.5.0"

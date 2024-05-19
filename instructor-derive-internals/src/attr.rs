@@ -20,8 +20,9 @@ impl ToTokens for Endian {
     }
 }
 
-pub fn parse_top_level_attributes(attrs: &Vec<Attribute>) -> syn::Result<Endian> {
+pub fn parse_top_level_attributes(attrs: &Vec<Attribute>) -> syn::Result<(Endian, bool)> {
     let mut endian = Endian::Generic;
+    let mut bitflags = false;
     for attr in attrs {
         if attr.path().is_ident("instructor") {
             attr.parse_nested_meta(|meta| {
@@ -34,11 +35,15 @@ pub fn parse_top_level_attributes(attrs: &Vec<Attribute>) -> syn::Result<Endian>
                     }
                     .map(|e| endian = e);
                 }
+                if meta.path.is_ident("bitflags") {
+                    bitflags = true;
+                    return Ok(());
+                }
                 Err(meta.error("unknown attribute"))
             })?;
         }
     }
-    Ok(endian)
+    Ok((endian, bitflags))
 }
 
 pub fn get_repr(attrs: &Vec<Attribute>) -> syn::Result<Option<Ident>> {

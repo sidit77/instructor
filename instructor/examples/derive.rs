@@ -1,3 +1,4 @@
+use bitflags::bitflags;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use instructor::utils::Length;
 use instructor::{Buffer, DoubleEndedBufferMut, Exstruct, Instruct};
@@ -115,4 +116,17 @@ enum Headers {
     Acl(AclHeader),
     L2cap(L2capHeader),
     Signaling(SignalingHeader)
+}
+
+bitflags! {
+    struct Flags: u8 {
+        const FLAG1 = 0b0000_0001;
+        const FLAG2 = 0b0000_0010;
+        const FLAG3 = 0b0000_0100;
+        const FLAG4 = 0b0000_1000;
+        const FLAG5 = 0b0001_0000;
+        const FLAG6 = 0b0010_0000;
+        const FLAG7 = 0b0100_0000;
+        const FLAG8 = 0b1000_0000;
+    }
 }
