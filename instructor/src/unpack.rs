@@ -1,3 +1,4 @@
+use std::mem::size_of;
 use crate::{Buffer, Endian, Error, NativeEndian};
 
 pub trait Exstruct<E: Endian>
@@ -27,6 +28,66 @@ impl<E: Endian> Exstruct<E> for bool {
     #[inline]
     fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
         Ok(buffer.read::<u8, E>()? != 0)
+    }
+}
+
+impl<E: Endian, T: Exstruct<E>> Exstruct<E> for Vec<T> {
+    #[inline]
+    fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
+        let mut vec = Vec::with_capacity(buffer.remaining() / size_of::<T>());
+        while buffer.remaining() > 0 {
+            vec.push(buffer.read::<T, E>()?);
+        }
+        Ok(vec)
+    }
+
+}
+
+impl<E, T1, T2> Exstruct<E> for (T1, T2)
+where
+    E: Endian,
+    T1: Exstruct<E>,
+    T2: Exstruct<E>,
+{
+    #[inline]
+    fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
+        Ok((T1::read_from_buffer(buffer)?, T2::read_from_buffer(buffer)?))
+    }
+}
+
+impl<E, T1, T2, T3> Exstruct<E> for (T1, T2, T3)
+where
+    E: Endian,
+    T1: Exstruct<E>,
+    T2: Exstruct<E>,
+    T3: Exstruct<E>,
+{
+    #[inline]
+    fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
+        Ok((
+            T1::read_from_buffer(buffer)?,
+            T2::read_from_buffer(buffer)?,
+            T3::read_from_buffer(buffer)?,
+        ))
+    }
+}
+
+impl<E, T1, T2, T3, T4> Exstruct<E> for (T1, T2, T3, T4)
+where
+    E: Endian,
+    T1: Exstruct<E>,
+    T2: Exstruct<E>,
+    T3: Exstruct<E>,
+    T4: Exstruct<E>,
+{
+    #[inline]
+    fn read_from_buffer<B: Buffer>(buffer: &mut B) -> Result<Self, Error> {
+        Ok((
+            T1::read_from_buffer(buffer)?,
+            T2::read_from_buffer(buffer)?,
+            T3::read_from_buffer(buffer)?,
+            T4::read_from_buffer(buffer)?,
+        ))
     }
 }
 

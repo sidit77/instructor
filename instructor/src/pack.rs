@@ -43,6 +43,51 @@ impl<E: Endian, T: Instruct<E>> Instruct<E> for Vec<T> {
     }
 }
 
+impl<E, T1, T2> Instruct<E> for (T1, T2)
+where
+    E: Endian,
+    T1: Instruct<E>,
+    T2: Instruct<E>,
+{
+    #[inline]
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
+        buffer.write::<T1, E>(&self.0);
+        buffer.write::<T2, E>(&self.1);
+    }
+}
+
+impl<E, T1, T2, T3> Instruct<E> for (T1, T2, T3)
+where
+    E: Endian,
+    T1: Instruct<E>,
+    T2: Instruct<E>,
+    T3: Instruct<E>,
+{
+    #[inline]
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
+        buffer.write::<T1, E>(&self.0);
+        buffer.write::<T2, E>(&self.1);
+        buffer.write::<T3, E>(&self.2);
+    }
+}
+
+impl<E, T1, T2, T3, T4> Instruct<E> for (T1, T2, T3, T4)
+where
+    E: Endian,
+    T1: Instruct<E>,
+    T2: Instruct<E>,
+    T3: Instruct<E>,
+    T4: Instruct<E>,
+{
+    #[inline]
+    fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
+        buffer.write::<T1, E>(&self.0);
+        buffer.write::<T2, E>(&self.1);
+        buffer.write::<T3, E>(&self.2);
+        buffer.write::<T4, E>(&self.3);
+    }
+}
+
 macro_rules! impl_prim_pack {
     ($($t:ident),+) => {
         $(
