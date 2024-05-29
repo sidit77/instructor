@@ -4,6 +4,7 @@ mod error;
 mod pack;
 mod unpack;
 pub mod utils;
+mod size;
 
 pub use bitfield::{BitBuffer, BitStorage};
 pub use buffer::{Buffer, BufferMut, DoubleEndedBufferMut};
@@ -12,6 +13,7 @@ pub use error::Error;
 pub use instructor_derive::{Exstruct, Instruct};
 pub use pack::Instruct;
 pub use unpack::Exstruct;
+pub use size::ByteSize;
 
 pub struct LittleEndian;
 pub struct BigEndian;
