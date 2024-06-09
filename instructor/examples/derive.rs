@@ -16,16 +16,16 @@ fn main() {
 
     let mut test = BytesMut::new();
     test.put(data.clone());
-    test.write_front(dbg!(&SignalingHeader {
+    test.write_front(dbg!(SignalingHeader {
         code: SignalingCodes::InformationRequest,
         id: 2,
         length: Length::new(test.len()).unwrap()
     }));
-    test.write_front(dbg!(&L2capHeader {
+    test.write_front(dbg!(L2capHeader {
         len: Length::new(test.len()).unwrap(),
         cid: 1
     }));
-    test.write_front(dbg!(&AclHeader {
+    test.write_front(dbg!(AclHeader {
         handle: 2048,
         pb: BoundaryFlag::FirstAutomaticallyFlushable,
         bc: BroadcastFlag::PointToPoint,

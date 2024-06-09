@@ -46,7 +46,7 @@ where
 {
     #[inline]
     fn write_to_buffer<B: BufferMut + ?Sized>(&self, buffer: &mut B) {
-        buffer.write(&self.0);
+        buffer.write_ref(&self.0);
     }
 }
 
@@ -120,6 +120,11 @@ impl u24 {
     pub const MAX: Self = Self(0x00FF_FFFF);
     pub const MIN: Self = Self(0x0000_0000);
     pub const BITS: u32 = 24;
+
+    pub const fn new(value: u32) -> Self {
+        assert!(value <= Self::MAX.0, "Value out of range");
+        Self(value)
+    }
 }
 
 impl<E: Endian> Exstruct<E> for u24 {

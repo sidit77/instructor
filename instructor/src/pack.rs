@@ -23,7 +23,7 @@ impl<E: Endian> Instruct<E> for () {
 impl<E: Endian> Instruct<E> for bool {
     #[inline]
     fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
-        buffer.write::<u8, E>(&u8::from(*self));
+        buffer.write::<u8, E>(u8::from(*self));
     }
 }
 
@@ -38,7 +38,7 @@ impl<E: Endian, T: Instruct<E>> Instruct<E> for Vec<T> {
     #[inline]
     fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
         for item in self {
-            buffer.write::<T, E>(item);
+            buffer.write_ref::<T, E>(item);
         }
     }
 }
@@ -51,8 +51,8 @@ where
 {
     #[inline]
     fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
-        buffer.write::<T1, E>(&self.0);
-        buffer.write::<T2, E>(&self.1);
+        buffer.write_ref::<T1, E>(&self.0);
+        buffer.write_ref::<T2, E>(&self.1);
     }
 }
 
@@ -65,9 +65,9 @@ where
 {
     #[inline]
     fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
-        buffer.write::<T1, E>(&self.0);
-        buffer.write::<T2, E>(&self.1);
-        buffer.write::<T3, E>(&self.2);
+        buffer.write_ref::<T1, E>(&self.0);
+        buffer.write_ref::<T2, E>(&self.1);
+        buffer.write_ref::<T3, E>(&self.2);
     }
 }
 
@@ -81,10 +81,10 @@ where
 {
     #[inline]
     fn write_to_buffer<B: BufferMut>(&self, buffer: &mut B) {
-        buffer.write::<T1, E>(&self.0);
-        buffer.write::<T2, E>(&self.1);
-        buffer.write::<T3, E>(&self.2);
-        buffer.write::<T4, E>(&self.3);
+        buffer.write_ref::<T1, E>(&self.0);
+        buffer.write_ref::<T2, E>(&self.1);
+        buffer.write_ref::<T3, E>(&self.2);
+        buffer.write_ref::<T4, E>(&self.3);
     }
 }
 

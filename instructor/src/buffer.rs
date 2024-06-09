@@ -80,7 +80,8 @@ impl<T: Buf> Buffer for T {
 pub trait BufferMut: Sized {
     fn extend_from_slice(&mut self, buf: &[u8]);
 
-    fn write<T, E>(&mut self, value: &T)
+    #[inline]
+    fn write<T, E>(&mut self, value: T)
     where
         T: Instruct<E>,
         E: Endian
@@ -88,23 +89,59 @@ pub trait BufferMut: Sized {
         value.write_to_buffer(self);
     }
 
-    fn write_le<T>(&mut self, value: &T)
+    #[inline]
+    fn write_ref<T, E>(&mut self, value: &T)
+        where
+            T: Instruct<E>,
+            E: Endian
+    {
+        value.write_to_buffer(self);
+    }
+
+    #[inline]
+    fn write_le<T>(&mut self, value: T)
     where
         T: Instruct<LittleEndian>
     {
         value.write_to_buffer(self);
     }
 
-    fn write_be<T>(&mut self, value: &T)
+    #[inline]
+    fn write_le_ref<T>(&mut self, value: &T)
+        where
+            T: Instruct<LittleEndian>
+    {
+        value.write_to_buffer(self);
+    }
+
+    #[inline]
+    fn write_be<T>(&mut self, value: T)
     where
         T: Instruct<BigEndian>
     {
         value.write_to_buffer(self);
     }
 
-    fn write_ne<T>(&mut self, value: &T)
+    #[inline]
+    fn write_be_ref<T>(&mut self, value: &T)
+        where
+            T: Instruct<BigEndian>
+    {
+        value.write_to_buffer(self);
+    }
+
+    #[inline]
+    fn write_ne<T>(&mut self, value: T)
     where
         T: Instruct<NativeEndian>
+    {
+        value.write_to_buffer(self);
+    }
+
+    #[inline]
+    fn write_ne_ref<T>(&mut self, value: &T)
+        where
+            T: Instruct<NativeEndian>
     {
         value.write_to_buffer(self);
     }
@@ -117,14 +154,14 @@ impl<T: BufMut> BufferMut for T {
 }
 
 pub trait DoubleEndedBufferMut: BufferMut {
-    fn write_front<T, E>(&mut self, value: &T)
+    fn write_front<T, E>(&mut self, value: T)
     where
         T: Instruct<E>,
         E: Endian;
 }
 
 impl<T: BufferMut + DerefMut<Target = [u8]>> DoubleEndedBufferMut for T {
-    fn write_front<U, E>(&mut self, value: &U)
+    fn write_front<U, E>(&mut self, value: U)
     where
         U: Instruct<E>,
         E: Endian
