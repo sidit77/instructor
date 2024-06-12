@@ -107,6 +107,14 @@ impl<'a> Buffer for Limit<'a> {
         Ok(())
     }
 
+    fn skip(&mut self, n: usize) -> Result<(), Error> {
+        if self.remaining < n {
+            return Err(Error::TooShort);
+        }
+        self.remaining -= n;
+        Ok(())
+    }
+
     fn remaining(&self) -> usize {
         self.remaining.min(self.buffer.remaining())
     }

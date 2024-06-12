@@ -93,6 +93,10 @@ impl<I: BitStorage> Buffer for BitBuffer<I> {
         Ok(())
     }
 
+    fn skip(&mut self, _: usize) -> Result<(), Error> {
+        Ok(())
+    }
+
     #[inline]
     fn remaining(&self) -> usize {
         self.remaining

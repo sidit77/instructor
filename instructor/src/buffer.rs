@@ -7,6 +7,8 @@ use crate::{BigEndian, Endian, Error, Exstruct, Instruct, LittleEndian, NativeEn
 pub trait Buffer: Sized {
     fn try_copy_to_slice(&mut self, buf: &mut [u8]) -> Result<(), Error>;
 
+    fn skip(&mut self, n: usize) -> Result<(), Error>;
+
     fn remaining(&self) -> usize;
 
     #[inline]
@@ -69,6 +71,14 @@ impl<T: Buf> Buffer for T {
             return Err(Error::TooShort);
         }
         self.copy_to_slice(buf);
+        Ok(())
+    }
+
+    fn skip(&mut self, n: usize) -> Result<(), Error> {
+        if Buf::remaining(self) < n {
+            return Err(Error::TooShort);
+        }
+        self.advance(n);
         Ok(())
     }
 
